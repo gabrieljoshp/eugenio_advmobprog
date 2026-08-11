@@ -1,3 +1,3 @@
 # eugenio_advmobprog
 
-A new Flutter project.
+Lab Activity 2: discussion
