@@ -19,11 +19,11 @@ class ProductDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Image.asset(
-                'assets/images/sample_card.jpg',
+              aspectRatio: 1,
+              child: Image.network(
+                product.thumbnail,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
+                errorBuilder: (_, _, _) =>
                     Image.network(product.thumbnail, fit: BoxFit.cover),
               ),
             ),
