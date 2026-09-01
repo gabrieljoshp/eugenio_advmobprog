@@ -43,7 +43,7 @@ class EugenioAdvMobProg extends StatelessWidget {
             title: 'E-Commerce App',
             initialRoute: '/home',
             routes: {
-              '/home': (context) => const HomeScreen(),
+              '/home': (context) => const HomeScreen(userId: 1),
               '/settings': (context) => const SettingsScreen(),
             },
           );

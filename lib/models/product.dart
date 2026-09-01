@@ -120,7 +120,7 @@ class ProductReview {
       comment: json['comment'] ?? '',
       date: json['date'] ?? '',
       reviewerName: json['reviewerName'] ?? '',
-      reviewerEmail: json['reviewerEmail '] ?? '',
+      reviewerEmail: json['reviewerEmail'] ?? '',
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../models/product.dart';
+import '../services/cart_service.dart';
 import '../widgets/custom_text.dart';
 
 class ProductDetailScreen extends StatelessWidget {
@@ -12,7 +13,7 @@ class ProductDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Article Details')),
+      appBar: AppBar(title: const Text('Product Details')),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.w),
         child: Column(
@@ -66,6 +67,44 @@ class ProductDetailScreen extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ],
+            ),
+            SizedBox(height: 24.h),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  try {
+                    final cart = await CartService().addToCart(
+                      userId: 5,
+                      productId: product.id,
+                      quantity: 1,
+                    );
+
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Added ${product.title} to cart. Total: \$${cart.total.toStringAsFixed(2)}',
+                          ),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to add to cart: $e')),
+                      );
+                    }
+                  }
+                },
+                icon: const Icon(Icons.add_shopping_cart),
+                label: const Text('Add to Cart'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFffd41d),
+                  foregroundColor: Colors.black,
+                  padding: EdgeInsets.symmetric(vertical: 14.h),
+                ),
+              ),
             ),
           ],
         ),

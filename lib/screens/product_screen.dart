@@ -20,11 +20,31 @@ class ProductScreen extends StatefulWidget {
 
 class _ProductScreenState extends State<ProductScreen> {
   late final Future<List<Product>> _productsFuture;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _productsFuture = ProductService().getAllProducts();
+  }
+
+  List<Product> _filterProducts(List<Product> products) {
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) {
+      return products;
+    }
+
+    return products.where((product) {
+      final title = product.title.toLowerCase();
+      final category = product.category.toLowerCase();
+      return title.contains(query) || category.contains(query);
+    }).toList();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -40,12 +60,25 @@ class _ProductScreenState extends State<ProductScreen> {
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(),
+                border: Border.all(color: Colors.grey.shade400),
               ),
-              child: CustomText(
-                text: 'Search',
-                fontSize: 20.sp,
-                fontWeight: FontWeight.bold,
+              child: Row(
+                children: [
+                  const Icon(Icons.search, color: Colors.grey),
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (_) => setState(() {}),
+                      decoration: const InputDecoration(
+                        hintText: 'Search products',
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             SizedBox(height: 16.h),
@@ -70,7 +103,7 @@ class _ProductScreenState extends State<ProductScreen> {
                   );
                 }
 
-                final products = snapshot.data ?? [];
+                final products = _filterProducts(snapshot.data ?? []);
                 if (products.isEmpty) {
                   return Center(
                     child: CustomText(

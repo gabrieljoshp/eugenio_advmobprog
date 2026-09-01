@@ -20,9 +20,10 @@ class SettingsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CustomText(
-              text: 'Appearance',
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
+              text: themeProvider.isDark ? 'Appearance' : 'Appearance',
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w500,
+              color: themeProvider.isDark ? Colors.white : Colors.black,
             ),
             SizedBox(height: 16.h),
             Container(
@@ -35,9 +36,10 @@ class SettingsScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   CustomText(
-                    text: 'Dark mode',
+                    text: themeProvider.isDark ? 'Light mode' : 'Dark mode',
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w500,
+                    color: themeProvider.isDark ? Colors.white : Colors.black,
                   ),
                   Switch(
                     value: themeProvider.isDark,
