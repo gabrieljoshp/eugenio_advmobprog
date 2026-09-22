@@ -1,4 +1,4 @@
-# Lab Activity 3: Discussion
+# Lab Activity 4: Discussion
 
 ## Overview
 This activity uses a layered architecture that separates the data model, API service layer, and screen UI. The flow is:
@@ -249,3 +249,82 @@ The cart flow works like this:
 7. The fetched product is passed into the same `ProductDetailScreen`.
 
 This creates a consistent, reusable, and maintainable pattern for rendering data from multiple DummyJSON endpoints.
+
+---
+
+## 7. User model, service, and profile screen
+The profile flow uses the same layered design as the cart flow. The `User` model in `lib/models/user.dart` defines the typed user data used by the UI, including:
+
+- `id`
+- `username`
+- `email`
+- `firstName` and `lastName`
+- `gender`
+- `image`
+- `accessToken` and `refreshToken`
+
+`User.fromJson()` converts the JSON returned by DummyJSON into a `User` object. The model also provides `displayName`, which combines the first and last name and falls back to the username when those fields are empty. `toJson()` provides the reverse conversion when a map representation is needed.
+
+### Login and saved user data
+`UserService` in `lib/services/user_service.dart` owns the authentication request and local persistence:
+
+1. `SignInScreen` validates the form and calls `UserService.loginUser(username, password)`.
+2. `loginUser()` sends `POST https://dummyjson.com/auth/login`.
+3. On a successful response, the service saves the returned fields through `saveUserData()` and returns the response map.
+4. `saveUserData()` converts the response to a `User` model, then stores the user's fields and tokens in `SharedPreferences`.
+5. `SignInScreen` converts the response to `User.fromJson(response)` and passes that object to `HomeScreen`.
+
+The service also exposes `getUserData()` to rebuild a raw map from `SharedPreferences`, `getUser()` to rebuild a typed `User`, and `isLoggedIn()` to check whether a saved token exists. `logout()` removes the saved profile fields and tokens.
+
+### Rendering the profile
+`HomeScreen` receives the authenticated `User` and passes it to `ProfileScreen(user: widget.user)`. `ProfileScreen` does not make an HTTP request or read raw JSON. It renders the supplied model values directly:
+
+- `user.image` is displayed in a `CircleAvatar` when available.
+- `user.displayName` and `user.username` identify the account.
+- `user.email`, `user.gender`, and `user.id` are shown in the profile details.
+- The logout button calls `UserService.logout()` and returns to `SignInScreen`.
+
+This separation keeps authentication and persistence in the service, data conversion in the model, and presentation and user actions in the screen.
+
+---
+
+## 8. Using saved user data to render `CartScreen`
+The saved user data supplies the `userId` needed by the cart endpoint. After login, the same `User` object is held by `HomeScreen`, so the navigation is:
+
+```dart
+CartScreen(
+  userId: widget.user.id,
+  cartUpdates: _cartUpdates,
+)
+```
+
+When `CartScreen` starts, `_loadCart()` calls:
+
+```dart
+_cartFuture = CartService().getCartsByUserId(widget.userId);
+```
+
+`CartService` requests `GET https://dummyjson.com/carts/user/{userId}`, decodes the `carts` array, and maps each entry to a `Cart` model. `CartScreen` uses `FutureBuilder<List<Cart>>` to show a loading indicator while the request is pending, an error message when the request fails, and `No cart found` when no cart is returned. When data exists, it renders the first cart for that user and displays each `CartProduct` with its thumbnail, title, price, quantity, and totals.
+
+The cart screen also maintains `_cart` as local state. Quantity changes update that local model immediately and recalculate the totals. Products added from the catalog return a `Cart` through the `cartUpdates` `ValueNotifier`; `CartScreen` listens for those updates and merges them into the displayed cart. This is necessary because DummyJSON accepts `POST /carts/add` but does not persist the simulated change for a later `GET`. A refresh therefore starts with the API cart and reapplies the locally received add-to-cart responses.
+
+When a cart product is tapped, the screen uses its product ID to request the complete product from `ProductService`, then opens the shared `ProductDetailScreen`. The cart remains responsible for cart state, while the product detail screen remains responsible for product information.
+
+---
+
+## 9. Updated design pattern in this activity
+The activity now demonstrates a layered model-service-screen pattern with local persistence and explicit data flow:
+
+### Model layer
+`User`, `Cart`, and `CartProduct` represent API data as typed Dart objects. Their JSON conversion methods prevent screens from depending on loosely typed response maps.
+
+### Service layer
+`UserService`, `CartService`, and `ProductService` encapsulate HTTP requests, response decoding, local user persistence, and API error handling. Screens call service methods instead of constructing requests themselves.
+
+### Screen layer
+`SignInScreen`, `HomeScreen`, `ProfileScreen`, and `CartScreen` coordinate user interaction and rendering. They receive models or IDs, display loading/error/content states, and pass data to the next screen when navigation is needed.
+
+### Persistence and state flow
+`SharedPreferences` preserves the authenticated user's profile fields and tokens between service calls. The saved `User.id` becomes the key that scopes cart retrieval. `HomeScreen` shares the authenticated user and a `ValueNotifier` for cart updates with its child screens, allowing catalog additions to appear in the cart without placing global state or HTTP code inside the widgets.
+
+This updated pattern is easier to maintain because each layer has one primary responsibility: models describe data, services acquire and persist data, and screens render data and respond to user actions. It also makes the API flow reusable: the same user ID can drive profile-related behavior and user-specific cart requests without duplicating authentication or parsing logic.

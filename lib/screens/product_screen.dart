@@ -5,6 +5,7 @@ import 'product_detail_screen.dart';
 
 // models
 import '../models/product.dart';
+import '../models/cart.dart';
 // services
 import '../services/product_service.dart';
 
@@ -12,7 +13,14 @@ import '../services/product_service.dart';
 import '../widgets/custom_text.dart';
 
 class ProductScreen extends StatefulWidget {
-  const ProductScreen({super.key});
+  final int userId;
+  final ValueChanged<Cart>? onCartUpdated;
+
+  const ProductScreen({
+    super.key,
+    required this.userId,
+    this.onCartUpdated,
+  });
 
   @override
   State<ProductScreen> createState() => _ProductScreenState();
@@ -130,8 +138,11 @@ class _ProductScreenState extends State<ProductScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                ProductDetailScreen(product: product),
+                            builder: (context) => ProductDetailScreen(
+                              product: product,
+                              userId: widget.userId,
+                              onCartUpdated: widget.onCartUpdated,
+                            ),
                           ),
                         );
                       },

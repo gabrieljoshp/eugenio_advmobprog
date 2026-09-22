@@ -6,20 +6,39 @@ import '../models/product.dart';
 
 class ProductService {
   Future<List<Product>> getAllProducts() async {
-    final response = await http.get(
-      Uri.parse('$host/products'),
-    );
+    const int pageSize = 100;
+    int skip = 0;
+    final List<Product> allProducts = [];
 
-    if (response.statusCode == 200) {
+    while (true) {
+      final response = await http.get(
+        Uri.parse('$host/products?limit=$pageSize&skip=$skip'),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to load products');
+      }
+
       final Map<String, dynamic> data = json.decode(response.body);
       final List productsJson = data['products'] ?? [];
 
-      return productsJson
-          .map((json) => Product.fromJson(json))
-          .toList();
-    } else {
-      throw Exception('Failed to load products');
+      if (productsJson.isEmpty) {
+        break;
+      }
+
+      allProducts.addAll(
+        productsJson.map((json) => Product.fromJson(json)).toList(),
+      );
+
+      final total = data['total'] as int? ?? allProducts.length;
+      if (allProducts.length >= total || productsJson.length < pageSize) {
+        break;
+      }
+
+      skip += productsJson.length;
     }
+
+    return allProducts;
   }
 
   Future<Product> getProductById(int id) async {

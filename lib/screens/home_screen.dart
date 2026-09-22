@@ -5,14 +5,16 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'product_screen.dart';
 import 'cart_screen.dart';
 
+import '../models/cart.dart';
 import '../widgets/custom_text.dart';
 import '../screens/chat_screen.dart';
+import '../models/user.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  final String username;
-  final int userId;
+  final User user;
 
-  const HomeScreen({super.key, this.username = '', required this.userId});
+  const HomeScreen({super.key, required this.user});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -22,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
   final PageController _pageController = PageController();
+  final ValueNotifier<List<Cart>> _cartUpdates = ValueNotifier<List<Cart>>([]);
 
   @override
   Widget build(BuildContext context) {
@@ -57,8 +60,17 @@ class _HomeScreenState extends State<HomeScreen> {
           physics: const NeverScrollableScrollPhysics(),
           controller: _pageController,
           children: [
-            const ProductScreen(),
-            CartScreen(userId: widget.userId),
+            ProductScreen(
+              userId: widget.user.id,
+              onCartUpdated: (cart) {
+                _cartUpdates.value = [..._cartUpdates.value, cart];
+              },
+            ),
+            CartScreen(
+              userId: widget.user.id,
+              cartUpdates: _cartUpdates,
+            ),
+            ProfileScreen(user: widget.user),
           ],
           onPageChanged: (page) {
             setState(() {
@@ -117,6 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _cartUpdates.dispose();
     super.dispose();
   }
 }

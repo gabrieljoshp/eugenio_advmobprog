@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../models/cart.dart';
 import '../models/product.dart';
 import '../services/cart_service.dart';
 import '../widgets/custom_text.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final Product product;
+  final int userId;
+  final ValueChanged<Cart>? onCartUpdated;
 
-  const ProductDetailScreen({super.key, required this.product});
+  const ProductDetailScreen({
+    super.key,
+    required this.product,
+    required this.userId,
+    this.onCartUpdated,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -75,12 +83,13 @@ class ProductDetailScreen extends StatelessWidget {
                 onPressed: () async {
                   try {
                     final cart = await CartService().addToCart(
-                      userId: 5,
+                      userId: userId,
                       productId: product.id,
                       quantity: 1,
                     );
 
                     if (context.mounted) {
+                      onCartUpdated?.call(cart);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(

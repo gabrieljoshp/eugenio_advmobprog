@@ -27,9 +27,9 @@ class Cart {
           [],
       total: (json['total'] as num?)?.toDouble() ?? 0.0,
       discountedTotal: (json['discountedTotal'] as num?)?.toDouble() ?? 0.0,
-      userId: json['userId'] ?? 0.0,
-      totalProducts: json['totalProducts'] ?? 0.0,
-      totalQuantity: json['totalQuantity'] ?? 0.0,
+      userId: (json['userId'] as num?)?.toInt() ?? 0,
+      totalProducts: (json['totalProducts'] as num?)?.toInt() ?? 0,
+      totalQuantity: (json['totalQuantity'] as num?)?.toInt() ?? 0,
     );
   }
 
