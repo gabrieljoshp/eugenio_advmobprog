@@ -8,6 +8,8 @@ class User {
   final String image;
   final String accessToken;
   final String refreshToken;
+  final int age;
+  final String phone;
 
   const User({
     required this.id,
@@ -19,6 +21,8 @@ class User {
     required this.image,
     required this.accessToken,
     required this.refreshToken,
+    this.age = 0,
+    this.phone = '',
   });
 
   String get displayName =>
@@ -38,6 +42,8 @@ class User {
       accessToken:
           json['accessToken'] as String? ?? json['token'] as String? ?? '',
       refreshToken: json['refreshToken'] as String? ?? '',
+      age: (json['age'] as num?)?.toInt() ?? 0,
+      phone: json['phone'] as String? ?? json['contactNo'] as String? ?? '',
     );
   }
 
@@ -51,5 +57,7 @@ class User {
     'image': image,
     'accessToken': accessToken,
     'refreshToken': refreshToken,
+    'age': age,
+    'phone': phone,
   };
 }

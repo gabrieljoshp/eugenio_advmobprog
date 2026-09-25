@@ -328,3 +328,41 @@ The activity now demonstrates a layered model-service-screen pattern with local 
 `SharedPreferences` preserves the authenticated user's profile fields and tokens between service calls. The saved `User.id` becomes the key that scopes cart retrieval. `HomeScreen` shares the authenticated user and a `ValueNotifier` for cart updates with its child screens, allowing catalog additions to appear in the cart without placing global state or HTTP code inside the widgets.
 
 This updated pattern is easier to maintain because each layer has one primary responsibility: models describe data, services acquire and persist data, and screens render data and respond to user actions. It also makes the API flow reusable: the same user ID can drive profile-related behavior and user-specific cart requests without duplicating authentication or parsing logic.
+
+---
+
+## 10. DummyJSON and Firebase authentication workflow
+
+The app supports two explicit login types through `LoginType`:
+
+### DummyJSON workflow
+
+1. The user selects `DummyJSON` and enters the demo username and password.
+2. `SignInScreen` calls `UserService.loginUser()`.
+3. `UserService` sends `POST https://dummyjson.com/auth/login` with `username`, `password`, and `expiresInMins`.
+4. The response is converted to `User`, and the access and refresh tokens plus profile fields are saved in `SharedPreferences`.
+5. `SplashScreen` checks the saved access token on later launches and opens `HomeScreen` when it is present.
+
+DummyJSON is a simulated API. Its user data and login tokens are useful for demonstrating HTTP requests and model mapping, but it is not a complete production account system. A simulated user registration should not be treated as persistent account creation.
+
+### Firebase workflow
+
+1. The user selects `Firebase` or opens the signup screen.
+2. Signup validates first name, last name, age, contact number, username, email address, and password, then calls `UserService.createAccount()`.
+3. Firebase Auth creates the account and the service updates the Firebase display name.
+4. Sign-in calls `UserService.signIn()` with email and password.
+5. The service obtains the Firebase ID token, stores the local profile snapshot, and records `LoginType.firebase`.
+6. `getUserData()` refreshes the ID token through `getIdToken()` before returning profile data.
+7. Password changes and account deletion reauthenticate the user before modifying the account. Logout calls Firebase sign-out and clears local session data.
+
+### Main idea of `UserService`
+
+`UserService` is the authentication boundary for the UI. Screens do not know how tokens are stored, how Firebase reauthentication works, or how DummyJSON responses are parsed. They call service methods and receive typed user data. Persisting `loginType` lets the splash screen and profile screen choose the correct session behavior after navigation or an app restart.
+
+### Benefits of Firebase for this application
+
+- Firebase securely manages passwords instead of storing them in the app.
+- Firebase ID tokens refresh automatically and can be checked by a backend or Firebase Security Rules.
+- Auth state survives app restarts and can be observed through `authStateChanges()`.
+- Reauthentication protects sensitive actions such as password changes and account deletion.
+- Firebase Authentication can be extended with email verification, password reset, providers, and custom claims without changing the screen-to-service boundary.

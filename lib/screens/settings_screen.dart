@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../providers/theme_provider.dart';
 import '../widgets/custom_text.dart';
+import '../services/user_service.dart';
+import 'signin_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -46,6 +48,22 @@ class SettingsScreen extends StatelessWidget {
                     onChanged: (_) => themeProvider.toggleTheme(),
                   ),
                 ],
+              ),
+            ),
+            SizedBox(height: 24.h),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  await UserService().signOut();
+                  if (!context.mounted) return;
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const SignInScreen()),
+                    (_) => false,
+                  );
+                },
+                icon: const Icon(Icons.logout),
+                label: const Text('Log out'),
               ),
             ),
           ],

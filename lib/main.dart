@@ -8,9 +8,13 @@ import 'package:provider/provider.dart';
 // screens
 import 'screens/settings_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/signup_screen.dart';
 
 // providers
 import 'providers/theme_provider.dart';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +22,9 @@ void main() async {
     _,
   ) async {
     await dotenv.load(fileName: 'assets/.env');
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     runApp(const EugenioAdvMobProg());
   });
 }
@@ -44,6 +51,7 @@ class EugenioAdvMobProg extends StatelessWidget {
             home: const SplashScreen(),
             routes: {
               '/settings': (context) => const SettingsScreen(),
+              '/signup': (context) => const SignupScreen(),
             },
           );
         },
