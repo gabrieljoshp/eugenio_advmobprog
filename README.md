@@ -1,4 +1,4 @@
-# Lab Activity 4: Discussion
+# Lab Activity 5: Discussion
 
 ## Overview
 This activity uses a layered architecture that separates the data model, API service layer, and screen UI. The flow is:

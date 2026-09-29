@@ -45,32 +45,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _updateUsername(User user) async {
-    final controller = TextEditingController(text: user.username);
     final value = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Update username'),
-        content: TextField(controller: controller, autofocus: true),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+      builder: (_) => _UsernameDialog(username: user.username),
     );
-    controller.dispose();
     if (value == null || value.trim().isEmpty) return;
-    if (_loginType == LoginType.firebase) {
-      await _service.updateUsername(username: value);
-    } else {
-      await _service.saveUserData({...user.toJson(), 'username': value.trim()});
+    try {
+      if (_loginType == LoginType.firebase) {
+        await _service.updateUsername(username: value);
+      } else {
+        await _service.saveUserData({...user.toJson(), 'username': value.trim()});
+      }
+      if (mounted) setState(_loadProfile);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Unable to update username: $error')),
+        );
+      }
     }
-    if (mounted) setState(_loadProfile);
   }
 
   Future<void> _changePassword() async {
@@ -207,7 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               SizedBox(height: 14.h),
               Text(
-                user.displayName,
+                '${user.firstName} ${user.lastName}',
                 style: TextStyle(
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w600,
@@ -234,6 +227,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 user.age == 0 ? 'Not specified' : '${user.age}',
               ),
               _detail(
+                Icons.wc_outlined,
+                'Gender',
+                user.gender.isEmpty ? 'Not specified' : user.gender,
+              ),
+              _detail(
+                Icons.badge,
+                'UID',
+                _loginType == LoginType.firebase
+                    ? (_service.currentUser?.uid ?? 'Unavailable')
+                    : '${user.id}',
+              ),
+              _detail(
                 Icons.login,
                 'Login',
                 _loginType == LoginType.firebase
@@ -241,38 +246,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     : 'DummyJSON',
               ),
               SizedBox(height: 14.h),
-              Wrap(
-                spacing: 8,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: () => _updateUsername(user),
-                    icon: const Icon(Icons.edit),
-                    label: const Text('Username'),
+              Card(
+                elevation: 0,
+                color: nuBLUE.withValues(alpha: 0.06),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18.r),
+                  side: BorderSide(color: nuBLUE.withValues(alpha: 0.12)),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(16.r),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Account settings', style: TextStyle(
+                        fontFamily: 'Poppins', fontSize: 16.sp,
+                        fontWeight: FontWeight.w600, color: nuBLUE,
+                      )),
+                      SizedBox(height: 12.h),
+                      SizedBox(width: double.infinity, child: FilledButton.icon(
+                        onPressed: () => _updateUsername(user),
+                        icon: const Icon(Icons.edit_outlined),
+                        label: const Text('Edit username'),
+                        style: FilledButton.styleFrom(backgroundColor: nuBLUE),
+                      )),
+                      if (_loginType == LoginType.firebase) ...[
+                        SizedBox(height: 8.h),
+                        SizedBox(width: double.infinity, child: OutlinedButton.icon(
+                          onPressed: _changePassword,
+                          icon: const Icon(Icons.lock_reset),
+                          label: const Text('Change password'),
+                          style: OutlinedButton.styleFrom(foregroundColor: nuBLUE),
+                        )),
+                      ],
+                      SizedBox(height: 8.h),
+                      SizedBox(width: double.infinity, child: TextButton.icon(
+                        onPressed: () => _deleteAccount(user),
+                        icon: const Icon(Icons.delete_outline),
+                        label: Text(_loginType == LoginType.firebase ? 'Delete account' : 'Delete local account'),
+                        style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
+                      )),
+                    ],
                   ),
-                  if (_loginType == LoginType.firebase)
-                    OutlinedButton.icon(
-                      onPressed: _changePassword,
-                      icon: const Icon(Icons.lock_reset),
-                      label: const Text('Password'),
-                    ),
-                  OutlinedButton.icon(
-                    onPressed: () => _deleteAccount(user),
-                    icon: const Icon(Icons.delete_outline),
-                    label: const Text('Delete'),
-                  ),
-                ],
+                ),
               ),
-              SizedBox(height: 18.h),
+              SizedBox(height: 14.h),
               SizedBox(
                 width: double.infinity,
                 height: 52.h,
-                child: ElevatedButton.icon(
+                child: OutlinedButton.icon(
                   onPressed: _logout,
                   icon: const Icon(Icons.logout),
                   label: const Text('Log out'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF6255),
-                    foregroundColor: Colors.white,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: nuBLUE,
+                    side: const BorderSide(color: nuBLUE),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13.r)),
                   ),
                 ),
               ),
@@ -286,6 +314,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _detail(IconData icon, String label, String value) => ListTile(
     leading: Icon(icon, color: nuYELLOW),
     title: Text(label),
-    trailing: Text(value, overflow: TextOverflow.ellipsis),
+    trailing: SizedBox(width: 170.w, child: Text(value, textAlign: TextAlign.end, overflow: TextOverflow.ellipsis)),
+  );
+}
+
+class _UsernameDialog extends StatefulWidget {
+  final String username;
+  const _UsernameDialog({required this.username});
+
+  @override
+  State<_UsernameDialog> createState() => _UsernameDialogState();
+}
+
+class _UsernameDialogState extends State<_UsernameDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.username);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Update username'),
+    content: TextField(controller: _controller, autofocus: true, textCapitalization: TextCapitalization.none),
+    actions: [
+      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+      FilledButton(onPressed: () => Navigator.pop(context, _controller.text), child: const Text('Save')),
+    ],
   );
 }

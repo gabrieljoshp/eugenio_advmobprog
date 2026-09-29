@@ -18,6 +18,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _lastName = TextEditingController();
   final _age = TextEditingController();
   final _contact = TextEditingController();
+  final _gender = TextEditingController();
   final _username = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
@@ -32,6 +33,7 @@ class _SignupScreenState extends State<SignupScreen> {
       _lastName,
       _age,
       _contact,
+      _gender,
       _username,
       _email,
       _password,
@@ -49,6 +51,11 @@ class _SignupScreenState extends State<SignupScreen> {
         email: _email.text.trim(),
         password: _password.text,
         username: _username.text.trim(),
+        firstName: _firstName.text.trim(),
+        lastName: _lastName.text.trim(),
+        gender: _gender.text.trim(),
+        age: int.parse(_age.text),
+        phone: _contact.text.trim(),
       );
       final user = credential.user;
       if (user != null) {
@@ -59,6 +66,7 @@ class _SignupScreenState extends State<SignupScreen> {
           'email': _email.text.trim(),
           'firstName': _firstName.text.trim(),
           'lastName': _lastName.text.trim(),
+          'gender': _gender.text.trim(),
           'age': int.parse(_age.text),
           'phone': _contact.text.trim(),
           'accessToken': token,
@@ -69,6 +77,9 @@ class _SignupScreenState extends State<SignupScreen> {
           firstName: _firstName.text.trim(),
           lastName: _lastName.text.trim(),
           username: _username.text.trim(),
+          gender: _gender.text.trim(),
+          age: int.parse(_age.text),
+          phone: _contact.text.trim(),
         );
       }
       if (!mounted) return;
@@ -127,6 +138,7 @@ class _SignupScreenState extends State<SignupScreen> {
               Icons.phone_outlined,
               keyboardType: TextInputType.phone,
             ),
+            _field(_gender, 'Gender', Icons.wc_outlined),
             _field(
               _username,
               'Username',

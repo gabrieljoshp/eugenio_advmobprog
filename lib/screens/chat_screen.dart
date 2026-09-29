@@ -157,7 +157,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => ChatDetailScreen(
-                              currentUserEmail: _currentUserEmail!,
+                              currentUserEmail: _currentUserEmail ?? '',
                               tappedUser: user,
                             ),
                           ),

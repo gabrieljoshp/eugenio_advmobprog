@@ -63,7 +63,6 @@ class DefaultFirebaseOptions {
     projectId: 'advmobprog-firebase-bf756',
     storageBucket: 'advmobprog-firebase-bf756.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBLs9nfut23AJa4Lz1df5OZPavrVYz2VFw',
     appId: '1:3090220135:ios:3d26a0fd413b7cc0b200c2',

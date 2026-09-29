@@ -69,6 +69,9 @@ class UserService {
     String? lastName,
     String? username,
     String? image,
+    String? gender,
+    int? age,
+    String? phone,
   }) async {
     await FirebaseFirestore.instance.collection('Users').doc(uid).set({
       'uid': uid,
@@ -77,16 +80,20 @@ class UserService {
       'lastName': lastName ?? '',
       'username': username ?? email.split('@').first,
       'image': image ?? '',
+      ...?gender == null ? null : {'gender': gender},
+      ...?age == null ? null : {'age': age},
+      ...?phone == null ? null : {'phone': phone},
     }, SetOptions(merge: true));
   }
 
   /// Retrieve user data from SharedPreferences
   Future<Map<String, dynamic>> getUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (await getLoginType() == LoginType.firebase && currentUser != null) {
-      final token = await currentUser!.getIdToken();
-      if (token != null) await prefs.setString('accessToken', token);
+    if (currentUser != null) {
+      // Rehydrate the local cache from Firestore when Firebase restores a
+      // session after an app restart.
+      await _saveFirebaseUser(currentUser!);
     }
+    final prefs = await SharedPreferences.getInstance();
     return {
       'uid': currentUser?.uid ?? '',
       'id': prefs.getInt('id') ?? 0,
@@ -113,8 +120,12 @@ class UserService {
   /// **Check if User is Logged In**
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
+    if (currentUser != null) {
+      await _saveFirebaseUser(currentUser!);
+      return true;
+    }
     if (await getLoginType() == LoginType.firebase) {
-      return currentUser != null;
+      return false;
     }
     final token = prefs.getString('accessToken') ?? prefs.getString('token');
     return token != null && token.isNotEmpty;
@@ -143,6 +154,7 @@ class UserService {
   }
 
   final firebase.FirebaseAuth firebaseAuth = firebase.FirebaseAuth.instance;
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   firebase.User? get currentUser => firebaseAuth.currentUser;
 
@@ -162,25 +174,48 @@ class UserService {
   }
 
   Future<void> _saveFirebaseUser(firebase.User firebaseUser) async {
+    final prefs = await SharedPreferences.getInstance();
     final token = await firebaseUser.getIdToken() ?? '';
+    final profile = await _getFirebaseProfile(firebaseUser.uid);
     await saveUserData({
       'id': firebaseUser.uid.hashCode,
       'username': firebaseUser.displayName ?? firebaseUser.email ?? '',
       'email': firebaseUser.email ?? '',
-      'firstName': '',
-      'lastName': '',
-      'gender': '',
+      'firstName': profile['firstName'] ?? prefs.getString('firstName') ?? '',
+      'lastName': profile['lastName'] ?? prefs.getString('lastName') ?? '',
+      'gender': profile['gender'] ?? prefs.getString('gender') ?? '',
       'image': firebaseUser.photoURL ?? '',
       'accessToken': token,
       'refreshToken': '',
+      'age': profile['age'] ?? prefs.getInt('age') ?? 0,
+      'phone': profile['phone'] ?? prefs.getString('phone') ?? '',
     });
-    await saveFirebaseProfile(
-      uid: firebaseUser.uid,
-      email: firebaseUser.email ?? '',
-      username: firebaseUser.displayName,
-      image: firebaseUser.photoURL,
-    );
     await _saveLoginType(LoginType.firebase);
+  }
+
+  Future<Map<String, dynamic>> _getFirebaseProfile(String uid) async {
+    final document = await firestore.collection('Users').doc(uid).get();
+    return document.data() ?? {};
+  }
+
+  Future<void> _saveFirebaseProfile({
+    required firebase.User firebaseUser,
+    required String firstName,
+    required String lastName,
+    required String gender,
+    int? age,
+    String? phone,
+  }) {
+    return firestore.collection('Users').doc(firebaseUser.uid).set({
+      'firstName': firstName.trim(),
+      'lastName': lastName.trim(),
+      'gender': gender.trim(),
+      'email': firebaseUser.email ?? '',
+      'username': firebaseUser.displayName ?? firebaseUser.email ?? '',
+      ...?age == null ? null : {'age': age},
+      ...?phone == null ? null : {'phone': phone.trim()},
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Future<firebase.UserCredential> signIn({
@@ -198,16 +233,29 @@ class UserService {
   Future<firebase.UserCredential> createAccount({
     required String email,
     required String password,
-    String? username,
+    required String username,
+    required String firstName,
+    required String lastName,
+    required String gender,
+    required int age,
+    required String phone,
   }) async {
     final credential = await firebaseAuth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
     if (credential.user != null) {
-      if (username != null && username.trim().isNotEmpty) {
+      if (username.trim().isNotEmpty) {
         await credential.user!.updateDisplayName(username.trim());
       }
+      await _saveFirebaseProfile(
+        firebaseUser: credential.user!,
+        firstName: firstName,
+        lastName: lastName,
+        gender: gender,
+        age: age,
+        phone: phone,
+      );
       await _saveFirebaseUser(credential.user!);
     }
     return credential;
@@ -224,6 +272,28 @@ class UserService {
       throw StateError('No Firebase user is signed in.');
     }
     await firebaseUser.updateDisplayName(username.trim());
+    await firestore.collection('Users').doc(firebaseUser.uid).set({
+      'username': username.trim(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+    await _saveFirebaseUser(firebaseUser);
+  }
+
+  Future<void> updateProfile({
+    required String firstName,
+    required String lastName,
+    required String gender,
+  }) async {
+    final firebaseUser = currentUser;
+    if (firebaseUser == null) {
+      throw StateError('No Firebase user is signed in.');
+    }
+    await _saveFirebaseProfile(
+      firebaseUser: firebaseUser,
+      firstName: firstName,
+      lastName: lastName,
+      gender: gender,
+    );
     await _saveFirebaseUser(firebaseUser);
   }
 
@@ -240,8 +310,9 @@ class UserService {
       password: password,
     );
     await firebaseUser.reauthenticateWithCredential(credential);
+    await firestore.collection('Users').doc(firebaseUser.uid).delete();
     await firebaseUser.delete();
-    await signOut();
+    await logout();
   }
 
   Future<void> resetPasswordFromCurrentPassword({
