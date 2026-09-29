@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart';
@@ -61,6 +62,24 @@ class UserService {
     }
   }
 
+  Future<void> saveFirebaseProfile({
+    required String uid,
+    required String email,
+    String? firstName,
+    String? lastName,
+    String? username,
+    String? image,
+  }) async {
+    await FirebaseFirestore.instance.collection('Users').doc(uid).set({
+      'uid': uid,
+      'email': email,
+      'firstName': firstName ?? username ?? email.split('@').first,
+      'lastName': lastName ?? '',
+      'username': username ?? email.split('@').first,
+      'image': image ?? '',
+    }, SetOptions(merge: true));
+  }
+
   /// Retrieve user data from SharedPreferences
   Future<Map<String, dynamic>> getUserData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -69,6 +88,7 @@ class UserService {
       if (token != null) await prefs.setString('accessToken', token);
     }
     return {
+      'uid': currentUser?.uid ?? '',
       'id': prefs.getInt('id') ?? 0,
       'username': prefs.getString('username') ?? '',
       'email': prefs.getString('email') ?? '',
@@ -154,6 +174,12 @@ class UserService {
       'accessToken': token,
       'refreshToken': '',
     });
+    await saveFirebaseProfile(
+      uid: firebaseUser.uid,
+      email: firebaseUser.email ?? '',
+      username: firebaseUser.displayName,
+      image: firebaseUser.photoURL,
+    );
     await _saveLoginType(LoginType.firebase);
   }
 

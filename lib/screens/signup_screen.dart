@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../constants.dart';
 import '../services/user_service.dart';
@@ -62,6 +63,13 @@ class _SignupScreenState extends State<SignupScreen> {
           'phone': _contact.text.trim(),
           'accessToken': token,
         });
+        await _service.saveFirebaseProfile(
+          uid: user.uid,
+          email: _email.text.trim(),
+          firstName: _firstName.text.trim(),
+          lastName: _lastName.text.trim(),
+          username: _username.text.trim(),
+        );
       }
       if (!mounted) return;
       Navigator.of(context).pop();
@@ -70,6 +78,15 @@ class _SignupScreenState extends State<SignupScreen> {
           content: Text('Account created. You can now sign in with Firebase.'),
         ),
       );
+    } on FirebaseAuthException catch (error) {
+      if (mounted) {
+        final message = error.code == 'email-already-in-use'
+            ? 'That email address is already registered.'
+            : 'Unable to create account: ${error.message ?? error.code}';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      }
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

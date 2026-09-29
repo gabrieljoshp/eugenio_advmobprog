@@ -66,10 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _cartUpdates.value = [..._cartUpdates.value, cart];
               },
             ),
-            CartScreen(
-              userId: widget.user.id,
-              cartUpdates: _cartUpdates,
-            ),
+            CartScreen(userId: widget.user.id, cartUpdates: _cartUpdates),
             ProfileScreen(user: widget.user),
           ],
           onPageChanged: (page) {
@@ -78,24 +75,20 @@ class _HomeScreenState extends State<HomeScreen> {
             });
           },
         ),
-        floatingActionButton: _selectedIndex == 1
-            ? null
-            : Padding(
-                padding: EdgeInsets.only(bottom: 60.h),
-                child: FloatingActionButton(
-                  backgroundColor: nuYELLOW,
-                  foregroundColor: nuBLUE,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ChatScreen(),
-                      ),
-                    );
-                  },
-                  child: const Icon(Icons.chat_bubble_outline),
-                ),
-              ),
+        floatingActionButton: Padding(
+          padding: EdgeInsets.only(bottom: 60.h),
+          child: FloatingActionButton(
+            backgroundColor: nuYELLOW,
+            foregroundColor: nuBLUE,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ChatScreen()),
+              );
+            },
+            child: const Icon(Icons.chat_bubble_outline),
+          ),
+        ),
         floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
         bottomNavigationBar: BottomNavigationBar(
           showSelectedLabels: false,
