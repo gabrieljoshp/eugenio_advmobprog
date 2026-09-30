@@ -54,7 +54,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 onChanged: (value) => setState(() => _searchText = value),
                 textInputAction: TextInputAction.search,
                 decoration: InputDecoration(
-                  hintText: 'Search chat ...',
+                  hintText: 'Search Users...',
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: (_searchChatController.text.isNotEmpty)
                       ? IconButton(
@@ -120,9 +120,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 final query = _searchText.trim().toLowerCase();
                 final users = snapshot.data!.where((user) {
                   final uid = (user['uid'] ?? '').toString();
-                  final name = (user['firstName'] ?? '')
-                      .toString()
-                      .toLowerCase();
+                  final firstName = (user['firstName'] ?? '').toString();
+                  final lastName = (user['lastName'] ?? '').toString();
+
+                  final name = '$firstName $lastName'.trim().toLowerCase();
                   final email = (user['email'] ?? '').toString().toLowerCase();
                   return uid != currentUid &&
                       (query.isEmpty ||
@@ -177,7 +178,9 @@ class _ChatScreenState extends State<ChatScreen> {
                             ),
                           ),
                           title: CustomText(
-                            text: user['firstName'] ?? 'Unknown',
+                            text:
+                                '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}'
+                                    .trim(),
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),

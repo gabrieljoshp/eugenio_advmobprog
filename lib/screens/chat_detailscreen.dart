@@ -97,7 +97,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   Widget build(BuildContext context) {
     final tappedUserId = (widget.tappedUser['uid'] ?? '').toString();
 
-    final tappedUserName = (widget.tappedUser['firstName'] ?? '').toString();
+    final tappedUserFirstName = (widget.tappedUser['firstName'] ?? '')
+        .toString();
+
+    final tappedUserLastName = (widget.tappedUser['lastName'] ?? '').toString();
+
+    final tappedUserName = '$tappedUserFirstName $tappedUserLastName'.trim();
 
     return FutureBuilder<String>(
       future: _currentUserIdFuture,
@@ -119,7 +124,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         return Scaffold(
           appBar: AppBar(
             centerTitle: true,
-            title: CustomText(text: tappedUserName, fontSize: 25.sp),
+            title: CustomText(
+              text: tappedUserName.isNotEmpty ? tappedUserName : 'Unknown',
+              fontSize: 25.sp,
+            ),
           ),
           body: Column(
             children: [
